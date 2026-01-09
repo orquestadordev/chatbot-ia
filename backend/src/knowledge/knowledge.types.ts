@@ -13,3 +13,10 @@ export interface KnowledgeProcessedDocument {
   fullText: string;
   normalizedText: string;
 }
+
+export interface KnowledgeChunk {
+  id: string;
+  content: string;
+  order: number;
+  source: string;
+}

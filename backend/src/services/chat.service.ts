@@ -23,9 +23,11 @@ export class ChatService {
       return;
     }
 
+    const chunks = this.knowledge.getChunksForQuestion(message);
+
     const promptPayload = {
       prompt: this.knowledge.buildUserPrompt(message),
-      system: this.knowledge.buildSystemPrompt()
+      system: this.knowledge.buildSystemPrompt(chunks)
     };
 
     for await (const token of this.client.streamCompletion(promptPayload, abortSignal)) {

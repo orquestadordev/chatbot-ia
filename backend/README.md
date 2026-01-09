@@ -29,6 +29,12 @@ src/
 - `npm run build` – compila TypeScript a `dist/`
 - `npm run start` – ejecuta la versión compilada
 - `npm run typecheck` – valida los tipos sin emitir código
+- `npm run test` – corre la suite de regresión de conocimiento (Jest)
+- `npm run test:watch` – corre los tests en modo watch
+- Para validar regresiones, ejecuta `npm run test`. Los casos de prueba envían preguntas reales al endpoint `/api/chat` (utilizando un cliente simulado de Ollama) y verifican que:
+  - Las preguntas dentro del conocimiento mencionen los términos esperados.
+  - Las preguntas fuera del alcance respondan exactamente con el fallback configurado.
+  - Agregar nuevas “golden questions” es tan simple como editar `tests/regression/questions.ts`.
 
 ## Variables de entorno
 
@@ -45,10 +51,11 @@ Si alguna variable falta, el runtime utilizará los valores por defecto anterior
 
 ## Conocimiento controlado (POC RAG)
 
-- El backend carga un archivo estático `knowledge/knowledge.md` y lo inyecta como **prompt del sistema** en cada request.
-- Edita ese archivo para agregar los datos autorizados; también puedes apuntar a otro archivo usando la variable `KNOWLEDGE_FILE`.
-- Si el mensaje no se encuentra en la base (heurística de palabras clave), el backend responde automáticamente `"No tengo información suficiente para responder esa pregunta."` sin consultar a Ollama.
-- Cuando sí hay coincidencias, el prompt instruye al modelo a responder exclusivamente con la información del archivo y a rechazar preguntas fuera de alcance.
+- El backend carga un archivo estático `knowledge/knowledge.md` y lo procesa mediante una **fuente** (`KnowledgeSource`), un **procesador** (normaliza texto) y un **chunker** (divide en bloques reutilizables de ~400 caracteres).
+- Puedes editar el archivo o apuntar a otro usando `KNOWLEDGE_FILE`. La arquitectura está lista para soportar múltiples fuentes en el futuro.
+- Si la pregunta no está cubierta por los chunks (heurística básica de palabras clave), respondemos `"No tengo información suficiente para responder esa pregunta."` sin llamar a Ollama.
+- Cuando hay coincidencias, concatenamos los chunks relevantes (hoy: todos) en el prompt del sistema y reforzamos la regla de “solo responder con esta información”.
+- El chunking está desacoplado, así que podrás reemplazarlo por otro algoritmo (por encabezados Markdown, tamaño distinto, etc.) o agregar embeddings más adelante.
 
 ## Probar el endpoint `/api/chat`
 
