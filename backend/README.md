@@ -1,0 +1,67 @@
+# Chatbot Local Backend
+
+API Node.js + TypeScript pensada para orquestar peticiones hacia Ollama y exponerlas via Server-Sent Events.
+
+## Stack
+
+- **Runtime:** Node.js 18+
+- **Framework:** Express (elegido por su simplicidad para SSE sin dependencias extra)
+- **Lenguaje:** TypeScript estricto
+
+## Estructura de carpetas
+
+```
+src/
+  config/       -> Configuración del servidor (puertos, futuros toggles)
+  constants/    -> Constantes de Ollama, modelos y headers
+  clients/      -> Cliente HTTP que encapsula llamadas a Ollama
+  controllers/  -> Capa HTTP (Express) y manejo de SSE
+  services/     -> Lógica de negocio y orquestación
+  routes/       -> Definición de rutas de Express
+  utils/        -> Helpers transversales (SSE helpers)
+  types/        -> Tipados compartidos
+  index.ts      -> Bootstrap del servidor
+```
+
+## Scripts
+
+- `npm run dev` – ejecuta el servidor en modo desarrollo con recarga
+- `npm run build` – compila TypeScript a `dist/`
+- `npm run start` – ejecuta la versión compilada
+- `npm run typecheck` – valida los tipos sin emitir código
+
+## Variables de entorno
+
+Crea un archivo `.env` en la raíz de `backend/` (se ignora por git) y define, por ejemplo:
+
+```
+PORT=4000
+OLLAMA_BASE_URL=http://127.0.0.1:11434
+OLLAMA_DEFAULT_MODEL=llama3
+```
+
+Si alguna variable falta, el runtime utilizará los valores por defecto anteriores.
+
+## Probar el endpoint `/api/chat`
+
+```bash
+curl -N -X POST http://localhost:4000/api/chat \
+  -H "Content-Type: application/json" \
+  -d '{"message":"Hola, ¿cómo estás?"}'
+```
+
+> `-N` mantiene el stream abierto para recibir los tokens SSE.
+
+## Prerrequisitos
+
+Antes de levantar el backend asegurate de contar con:
+
+- **Ollama instalado y ejecutándose** localmente (`ollama serve`).
+- **Modelo `llama3` descargado** en Ollama (`ollama pull llama3`).
+- Node.js 18+ y pnpm/npm para instalar dependencias del backend.
+
+## Próximos pasos
+
+- Añadir middlewares de observabilidad y logging
+- Integrar módulos RAG / memoria
+- Agregar tests end-to-end para el flujo SSE
