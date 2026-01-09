@@ -22,11 +22,19 @@ npm run dev
 
 El servidor arrancará en `http://localhost:4000` (configurable con `PORT`).
 
+Para correr la suite de regresión basada en conocimiento:
+
+```bash
+cd backend
+npm test
+```
+
 ## Estado actual
 
 - ✅ API `/api/chat` con validación básica, SSE y forward de streaming desde Ollama
 - 🚧 Pendiente: construir la UI, agregar observabilidad y RAG
-- 🧠 Nuevo: base de conocimiento estática `backend/knowledge/knowledge.md` que limita las respuestas.
+- 🧠 Nuevo: base de conocimiento estática `backend/knowledge/knowledge.md` con chunking interno para controlar las respuestas.
+- ✅ Tests de regresión (Jest + Supertest) que verifican que el backend no responda fuera del conocimiento autorizado.
 
 ## Requisitos previos
 
