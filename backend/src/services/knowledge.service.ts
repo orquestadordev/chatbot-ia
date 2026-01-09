@@ -1,3 +1,8 @@
+import {
+  KNOWLEDGE_FILE_PATH,
+  KNOWLEDGE_WATCH_DEBOUNCE_MS,
+  KNOWLEDGE_WATCH_ENABLED
+} from "../constants/knowledge.constants";
 import { KNOWLEDGE_FALLBACK_RESPONSE, KNOWLEDGE_SYSTEM_PROMPT_TEMPLATE } from "../constants/prompt.constants";
 import { KnowledgeChunk, KnowledgeProcessedDocument } from "../knowledge/knowledge.types";
 import { KnowledgeChunker } from "../knowledge/chunkers/knowledge.chunker";
@@ -10,6 +15,8 @@ import { FileKnowledgeSource, fileKnowledgeSource } from "../knowledge/sources/f
 import { KnowledgeSource } from "../knowledge/sources/knowledge.source";
 import { KnowledgeRepository } from "../knowledge/repository/knowledge.repository";
 import { InMemoryKnowledgeRepository } from "../knowledge/repository/memory.knowledge.repository";
+import { FilesystemKnowledgeWatcher } from "../knowledge/watchers/filesystem-knowledge.watcher";
+import { KnowledgeWatcher } from "../knowledge/watchers/knowledge.watcher";
 
 export class KnowledgeService {
   private processedDocument: KnowledgeProcessedDocument = {
@@ -23,9 +30,11 @@ export class KnowledgeService {
     private readonly processor: KnowledgeProcessor = simpleKnowledgeProcessor,
     private readonly chunker: KnowledgeChunker = simpleKnowledgeChunker,
     private readonly repository: KnowledgeRepository = new InMemoryKnowledgeRepository(),
-    private readonly chunkSelector: KnowledgeChunkSelector = keywordKnowledgeChunkSelector
+    private readonly chunkSelector: KnowledgeChunkSelector = keywordKnowledgeChunkSelector,
+    private readonly watcher?: KnowledgeWatcher
   ) {
     this.refreshContext();
+    this.initializeWatcher();
   }
 
   refreshContext(): void {
@@ -80,6 +89,21 @@ export class KnowledgeService {
   private buildContextFromChunks(chunks: KnowledgeChunk[] = this.repository.getChunks()): string {
     return chunks.map((chunk) => chunk.content).filter(Boolean).join("\n---\n");
   }
+
+  private initializeWatcher(): void {
+    if (!this.watcher) {
+      return;
+    }
+
+    this.watcher.start(() => {
+      try {
+        this.refreshContext();
+        console.info("[KnowledgeService] Context refreshed after knowledge file change.");
+      } catch (error) {
+        console.error("[KnowledgeService] Error refreshing knowledge context after file change:", error);
+      }
+    });
+  }
 }
 
 export const knowledgeService = new KnowledgeService(
@@ -87,5 +111,11 @@ export const knowledgeService = new KnowledgeService(
   simpleKnowledgeProcessor,
   simpleKnowledgeChunker,
   new InMemoryKnowledgeRepository(),
-  keywordKnowledgeChunkSelector
+  keywordKnowledgeChunkSelector,
+  KNOWLEDGE_WATCH_ENABLED
+    ? new FilesystemKnowledgeWatcher({
+        filePath: KNOWLEDGE_FILE_PATH,
+        debounceMs: KNOWLEDGE_WATCH_DEBOUNCE_MS
+      })
+    : undefined
 );
