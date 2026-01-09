@@ -38,9 +38,17 @@ Crea un archivo `.env` en la raíz de `backend/` (se ignora por git) y define, p
 PORT=4000
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_DEFAULT_MODEL=llama3
+KNOWLEDGE_FILE=knowledge/knowledge.md # opcional
 ```
 
 Si alguna variable falta, el runtime utilizará los valores por defecto anteriores.
+
+## Conocimiento controlado (POC RAG)
+
+- El backend carga un archivo estático `knowledge/knowledge.md` y lo inyecta como **prompt del sistema** en cada request.
+- Edita ese archivo para agregar los datos autorizados; también puedes apuntar a otro archivo usando la variable `KNOWLEDGE_FILE`.
+- Si el mensaje no se encuentra en la base (heurística de palabras clave), el backend responde automáticamente `"No tengo información suficiente para responder esa pregunta."` sin consultar a Ollama.
+- Cuando sí hay coincidencias, el prompt instruye al modelo a responder exclusivamente con la información del archivo y a rechazar preguntas fuera de alcance.
 
 ## Probar el endpoint `/api/chat`
 

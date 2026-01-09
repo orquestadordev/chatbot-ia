@@ -4,18 +4,22 @@ import {
   OLLAMA_DEFAULT_MODEL,
   OLLAMA_ENDPOINTS
 } from "../constants/ollama.constants";
-import { OllamaGenerateRequest, OllamaStreamChunk } from "../types/chat.types";
+import { OllamaGenerateRequest, OllamaStreamChunk, StreamCompletionPayload } from "../types/chat.types";
 
 const decoder = new TextDecoder();
 
 export class OllamaClient {
   constructor(private readonly baseUrl: string = OLLAMA_BASE_URL) {}
 
-  async *streamCompletion(prompt: string, signal?: AbortSignal): AsyncGenerator<string> {
+  async *streamCompletion(
+    payload: StreamCompletionPayload,
+    signal?: AbortSignal
+  ): AsyncGenerator<string> {
     const requestBody: OllamaGenerateRequest = {
       model: OLLAMA_DEFAULT_MODEL,
-      prompt,
-      stream: true
+      prompt: payload.prompt,
+      stream: true,
+      ...(payload.system ? { system: payload.system } : {})
     };
 
     const response = await fetch(`${this.baseUrl}${OLLAMA_ENDPOINTS.GENERATE}`, {

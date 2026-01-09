@@ -6,6 +6,7 @@ export interface OllamaGenerateRequest {
   model: string;
   prompt: string;
   stream: boolean;
+  system?: string;
 }
 
 export interface OllamaStreamChunk {
@@ -20,4 +21,9 @@ export interface StreamChatParams {
   message: string;
   abortSignal?: AbortSignal;
   onToken: TokenStreamHandler;
+}
+
+export interface StreamCompletionPayload {
+  prompt: string;
+  system?: string;
 }
