@@ -2,6 +2,8 @@ import { KNOWLEDGE_FALLBACK_RESPONSE, KNOWLEDGE_SYSTEM_PROMPT_TEMPLATE } from ".
 import { KnowledgeChunk, KnowledgeProcessedDocument } from "../knowledge/knowledge.types";
 import { KnowledgeChunker } from "../knowledge/chunkers/knowledge.chunker";
 import { simpleKnowledgeChunker } from "../knowledge/chunkers/simple-knowledge.chunker";
+import { KnowledgeChunkSelector } from "../knowledge/chunk-selectors/knowledge-chunk.selector";
+import { keywordKnowledgeChunkSelector } from "../knowledge/chunk-selectors/keyword.chunk-selector";
 import { KnowledgeProcessor } from "../knowledge/processors/knowledge.processor";
 import { simpleKnowledgeProcessor } from "../knowledge/processors/simple-knowledge.processor";
 import { FileKnowledgeSource, fileKnowledgeSource } from "../knowledge/sources/file-knowledge.source";
@@ -20,7 +22,8 @@ export class KnowledgeService {
     private readonly source: KnowledgeSource = fileKnowledgeSource,
     private readonly processor: KnowledgeProcessor = simpleKnowledgeProcessor,
     private readonly chunker: KnowledgeChunker = simpleKnowledgeChunker,
-    private readonly repository: KnowledgeRepository = new InMemoryKnowledgeRepository()
+    private readonly repository: KnowledgeRepository = new InMemoryKnowledgeRepository(),
+    private readonly chunkSelector: KnowledgeChunkSelector = keywordKnowledgeChunkSelector
   ) {
     this.refreshContext();
   }
@@ -44,9 +47,14 @@ export class KnowledgeService {
     return this.repository.getChunks();
   }
 
-  getChunksForQuestion(_question: string): KnowledgeChunk[] {
-    // Estrategia inicial: devolver todos los chunks. Se dejará lista para filtros futuros.
-    return this.repository.getChunks();
+  getChunksForQuestion(question: string): KnowledgeChunk[] {
+    const availableChunks = this.repository.getChunks();
+    if (!question?.trim()) {
+      return availableChunks;
+    }
+
+    const selected = this.chunkSelector.select(question, availableChunks);
+    return selected.length ? selected : availableChunks;
   }
 
   getContextFromChunks(chunks: KnowledgeChunk[] = this.chunks): string {
@@ -78,5 +86,6 @@ export const knowledgeService = new KnowledgeService(
   new FileKnowledgeSource(),
   simpleKnowledgeProcessor,
   simpleKnowledgeChunker,
-  new InMemoryKnowledgeRepository()
+  new InMemoryKnowledgeRepository(),
+  keywordKnowledgeChunkSelector
 );
