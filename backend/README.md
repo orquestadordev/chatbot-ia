@@ -29,9 +29,11 @@ src/
 - `npm run build` – compila TypeScript a `dist/`
 - `npm run start` – ejecuta la versión compilada
 - `npm run typecheck` – valida los tipos sin emitir código
-- `npm run test` – corre la suite de regresión de conocimiento (Jest)
+- `npm run test` – corre la suite de regresión de conocimiento y las pruebas de integridad del chunking (Jest)
 - `npm run test:watch` – corre los tests en modo watch
-- Para validar regresiones, ejecuta `npm run test`. Los casos de prueba envían preguntas reales al endpoint `/api/chat` (utilizando un cliente simulado de Ollama) y verifican que:
+- Para validar regresiones e integridad del knowledge, ejecuta `npm run test`. Los casos de prueba: 
+  - Envían preguntas reales al endpoint `/api/chat` (utilizando un cliente simulado de Ollama) y verifican que las respuestas respeten el conocimiento.
+  - Ejecutan tests unitarios sobre el chunking para detectar duplicados, pérdida de orden o violaciones de límites de tamaño.
   - Las preguntas dentro del conocimiento mencionen los términos esperados.
   - Las preguntas fuera del alcance respondan exactamente con el fallback configurado.
   - Agregar nuevas “golden questions” es tan simple como editar `tests/regression/questions.ts`.

@@ -34,19 +34,23 @@ export class SimpleKnowledgeChunker implements KnowledgeChunker {
     };
 
     for (const paragraph of paragraphs) {
-      if ((current + SEPARATOR + paragraph).length <= this.maxChunkSize) {
-        current = current ? `${current}${SEPARATOR}${paragraph}` : paragraph;
-      } else {
-        flushChunk();
-        if (paragraph.length > this.maxChunkSize) {
-          const pieces = this.breakIntoSubchunks(paragraph);
-          for (const piece of pieces) {
-            current = piece;
-            flushChunk();
-          }
-        } else {
-          current = paragraph;
+      const candidate = current ? `${current}${SEPARATOR}${paragraph}` : paragraph;
+
+      if (candidate.length <= this.maxChunkSize) {
+        current = candidate;
+        continue;
+      }
+
+      flushChunk();
+
+      if (paragraph.length > this.maxChunkSize) {
+        const pieces = this.breakIntoSubchunks(paragraph);
+        for (const piece of pieces) {
+          current = piece;
+          flushChunk();
         }
+      } else {
+        current = paragraph;
       }
     }
 
@@ -56,9 +60,36 @@ export class SimpleKnowledgeChunker implements KnowledgeChunker {
 
   private breakIntoSubchunks(text: string): string[] {
     const pieces: string[] = [];
-    for (let i = 0; i < text.length; i += this.maxChunkSize) {
-      pieces.push(text.slice(i, i + this.maxChunkSize));
+    const words = text.split(/\s+/).filter(Boolean);
+    let current = "";
+
+    for (const word of words) {
+      if (word.length > this.maxChunkSize) {
+        if (current) {
+          pieces.push(current);
+          current = "";
+        }
+        for (let i = 0; i < word.length; i += this.maxChunkSize) {
+          pieces.push(word.slice(i, i + this.maxChunkSize));
+        }
+        continue;
+      }
+
+      const candidate = current ? `${current} ${word}` : word;
+      if (candidate.length <= this.maxChunkSize) {
+        current = candidate;
+      } else {
+        if (current) {
+          pieces.push(current);
+        }
+        current = word;
+      }
     }
+
+    if (current) {
+      pieces.push(current);
+    }
+
     return pieces;
   }
 }
