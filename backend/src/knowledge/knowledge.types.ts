@@ -20,3 +20,8 @@ export interface KnowledgeChunk {
   order: number;
   source: string;
 }
+
+export interface KnowledgeRepositorySnapshot {
+  chunks: KnowledgeChunk[];
+  aggregatedContent: string;
+}
