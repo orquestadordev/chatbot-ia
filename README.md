@@ -26,6 +26,7 @@ El servidor arrancará en `http://localhost:4000` (configurable con `PORT`).
 
 - ✅ API `/api/chat` con validación básica, SSE y forward de streaming desde Ollama
 - 🚧 Pendiente: construir la UI, agregar observabilidad y RAG
+- 🧠 Nuevo: base de conocimiento estática `backend/knowledge/knowledge.md` que limita las respuestas.
 
 ## Requisitos previos
 
@@ -33,5 +34,6 @@ El servidor arrancará en `http://localhost:4000` (configurable con `PORT`).
 - Ollama instalado y corriendo manualmente con `ollama serve` en una terminal aparte (`http://127.0.0.1:11434`).
 - Modelo `llama3` descargado localmente (`ollama pull llama3`).
 - El backend **no** inicia Ollama automáticamente: asegurate de que el servicio esté arriba antes de `npm run dev`.
+- Personaliza la base de conocimiento editando `backend/knowledge/knowledge.md` antes de realizar consultas.
 
 ````
