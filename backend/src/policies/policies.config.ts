@@ -1,4 +1,4 @@
-import { PolicyDefinition } from "./policy.types";
+import { PolicyDefinition } from './policy.types'
 
 export const POLICIES: PolicyDefinition[] = [
   {

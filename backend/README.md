@@ -46,6 +46,7 @@ Crea un archivo `.env` en la raíz de `backend/` (se ignora por git) y define, p
 PORT=4000
 OLLAMA_BASE_URL=http://127.0.0.1:11434
 OLLAMA_DEFAULT_MODEL=llama3
+CORS_ALLOWED_ORIGINS=http://localhost:5173,http://127.0.0.1:5173
 KNOWLEDGE_FILE=knowledge/knowledge.md # opcional
 ```
 
