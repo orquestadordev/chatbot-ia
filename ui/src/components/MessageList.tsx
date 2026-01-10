@@ -16,8 +16,8 @@ export const MessageList = ({ messages }: MessageListProps) => {
   if (messages.length === 0) {
     return (
       <div className="message-list message-list--empty">
-        <p>Probá con preguntas del conocimiento autorizado para AndesGPT.</p>
-        <p className="empty-hint">Ejemplo: "¿Qué es AndesGPT?"</p>
+        <p>Hola 👋 Contame qué necesitás o pedime un resumen rápido.</p>
+        <p className="empty-hint">Ejemplo: “¿Cuál es la novedad más importante del informe?”</p>
       </div>
     );
   }

@@ -1,19 +1,31 @@
 import { ChatContainer } from "./components/ChatContainer";
 import { ChatInput } from "./components/ChatInput";
+import { ConnectionBadge } from './components/ConnectionBadge';
 import { MessageList } from "./components/MessageList";
 import { TypingIndicator } from "./components/TypingIndicator";
 import { useChatSession } from "./hooks/useChatSession";
 
 const App = () => {
-  const { messages, sendMessage, cancelStream, resetConversation, isStreaming, error } = useChatSession();
+  const { messages, sendMessage, cancelStream, resetConversation, isStreaming, error, connectionState } = useChatSession();
+
+  const badgeState = error ? "error" : isStreaming || connectionState === "connecting" ? "responding" : "ready";
+  const badgeLabel = {
+    ready: "Disponible",
+    responding: "Respondiendo…",
+    error: "Reintentando…"
+  }[badgeState];
 
   return (
     <main className="app-layout">
       <ChatContainer
+        subtitle="Asistente conversacional local"
         actions={
-          <button className="btn btn-ghost" onClick={resetConversation} disabled={!messages.length && !isStreaming}>
-            Reiniciar
-          </button>
+          <div className="chat-header-actions">
+            <ConnectionBadge state={badgeState} label={badgeLabel} />
+            <button className="btn btn-ghost" onClick={resetConversation} disabled={messages.length <= 1 && !isStreaming}>
+              Reiniciar
+            </button>
+          </div>
         }
       >
         <MessageList messages={messages} />

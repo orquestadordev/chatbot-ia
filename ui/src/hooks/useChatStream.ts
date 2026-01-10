@@ -25,11 +25,14 @@ export interface UseChatStreamOptions {
   endpoint?: string;
 }
 
+export type ConnectionState = "idle" | "connecting" | "error";
+
 export const useChatStream = (options: UseChatStreamOptions = {}) => {
   const endpoint = options.endpoint ?? resolveDefaultEndpoint();
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isStreaming, setIsStreaming] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [connectionState, setConnectionState] = useState<ConnectionState>("idle");
 
   const startStream = useCallback(
     async (message: string, callbacks: StreamCallbacks = {}) => {
@@ -42,6 +45,7 @@ export const useChatStream = (options: UseChatStreamOptions = {}) => {
       abortControllerRef.current = controller;
       setIsStreaming(true);
       setError(null);
+       setConnectionState("connecting");
 
       try {
         await streamChatRequest({
@@ -52,14 +56,17 @@ export const useChatStream = (options: UseChatStreamOptions = {}) => {
           onEvent: callbacks.onEvent
         });
         callbacks.onComplete?.();
+        setConnectionState("idle");
       } catch (error) {
         if ((error as DOMException)?.name === "AbortError") {
           callbacks.onCancelled?.();
+          setConnectionState("idle");
           return;
         }
         const errorMessage = error instanceof Error ? error.message : "Unexpected streaming error";
         setError(errorMessage);
         callbacks.onError?.(errorMessage);
+        setConnectionState("error");
         throw error;
       } finally {
         setIsStreaming(false);
@@ -71,6 +78,7 @@ export const useChatStream = (options: UseChatStreamOptions = {}) => {
 
   const cancelStream = useCallback(() => {
     abortControllerRef.current?.abort();
+    setConnectionState("idle");
   }, []);
 
   useEffect(() => {
@@ -83,6 +91,7 @@ export const useChatStream = (options: UseChatStreamOptions = {}) => {
     startStream,
     cancelStream,
     isStreaming,
-    error
+    error,
+    connectionState
   };
 };

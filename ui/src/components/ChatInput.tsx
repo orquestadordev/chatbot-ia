@@ -35,19 +35,22 @@ export const ChatInput = ({ onSend, disabled, isStreaming, onStop }: ChatInputPr
     <form className="chat-input" onSubmit={handleSubmit}>
       <textarea
         className="chat-input__textarea"
-        placeholder="Escribí tu mensaje y presioná Enter"
+        placeholder="Escribí tu mensaje o pegá un texto para analizar"
         value={value}
         disabled={disabled}
-  onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setValue(event.target.value)}
+        onChange={(event: ChangeEvent<HTMLTextAreaElement>) => setValue(event.target.value)}
         onKeyDown={handleKeyDown}
         rows={1}
+        aria-label="Campo de mensaje"
       />
       <div className="chat-input__actions">
         {isStreaming ? (
-          <button type="button" className="btn btn-secondary" onClick={onStop}>
+          <button type="button" className="btn btn-secondary" onClick={() => onStop?.()}>
             Detener
           </button>
-        ) : null}
+        ) : (
+          <span className="chat-input__hint">Enter envía · Shift+Enter hace salto</span>
+        )}
         <button type="submit" className={clsx("btn", "btn-primary")} disabled={disabled || !value.trim()}>
           Enviar
         </button>

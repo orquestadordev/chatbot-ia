@@ -12,7 +12,7 @@ export const TypingIndicator = ({ active }: TypingIndicatorProps) => {
       <span className="typing-dot" />
       <span className="typing-dot" />
       <span className="typing-dot" />
-      <p>AndesGPT está pensando…</p>
+      <p>AndesGPT está escribiendo…</p>
     </div>
   );
 };

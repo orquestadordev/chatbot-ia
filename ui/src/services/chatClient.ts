@@ -9,7 +9,7 @@ export interface StreamChatRequestOptions {
 }
 
 const parseSSEEvent = (rawEvent: string): SSEEventPayload => {
-  const lines = rawEvent.split(/\r?\n/);
+  const lines = rawEvent.replace(/\r$/, "").split(/\r?\n/);
   let event = "message";
   const dataLines: string[] = [];
 
@@ -17,7 +17,9 @@ const parseSSEEvent = (rawEvent: string): SSEEventPayload => {
     if (line.startsWith("event:")) {
       event = line.slice(6).trim() || "message";
     } else if (line.startsWith("data:")) {
-      dataLines.push(line.slice(5).trimStart());
+      const rawValue = line.slice(5);
+      const cleanedValue = rawValue.startsWith(" ") ? rawValue.slice(1) : rawValue;
+      dataLines.push(cleanedValue);
     }
   }
 
@@ -59,7 +61,7 @@ export const streamChatRequest = async ({
   const processBuffer = (flushRemainder = false): boolean => {
     let boundary = buffer.indexOf("\n\n");
     while (boundary !== -1) {
-      const rawEvent = buffer.slice(0, boundary).trim();
+  const rawEvent = buffer.slice(0, boundary);
       buffer = buffer.slice(boundary + 2);
 
       if (rawEvent) {
@@ -84,7 +86,7 @@ export const streamChatRequest = async ({
     }
 
     if (flushRemainder && buffer.trim()) {
-      const event = parseSSEEvent(buffer.trim());
+      const event = parseSSEEvent(buffer);
       buffer = "";
       onEvent?.(event);
 

@@ -11,10 +11,17 @@ const createMessage = (message: Partial<ChatMessage>): ChatMessage => ({
   ...message
 });
 
+const buildAssistantGreeting = (): ChatMessage =>
+  createMessage({
+    role: "assistant",
+    status: "complete",
+    content: "Hola, soy AndesGPT 👋\n¿En qué puedo ayudarte hoy?"
+  });
+
 export const useChatSession = () => {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => [buildAssistantGreeting()]);
   const [lastError, setLastError] = useState<string | null>(null);
-  const { startStream, cancelStream, isStreaming, error: streamError } = useChatStream();
+  const { startStream, cancelStream, isStreaming, error: streamError, connectionState } = useChatStream();
 
   const appendToken = useCallback((messageId: string, token: string) => {
     setMessages((prev: ChatMessage[]) =>
@@ -63,7 +70,7 @@ export const useChatSession = () => {
         status: "streaming"
       });
 
-  setMessages((prev: ChatMessage[]) => [...prev, userMessage, assistantMessage]);
+      setMessages((prev: ChatMessage[]) => [...prev, userMessage, assistantMessage]);
 
       try {
         await startStream(trimmed, {
@@ -89,14 +96,15 @@ export const useChatSession = () => {
 
   const resetConversation = useCallback(() => {
     cancelStream();
-    setMessages([]);
+    setMessages([buildAssistantGreeting()]);
     setLastError(null);
   }, [cancelStream]);
 
   const status = useMemo(() => ({
     isStreaming,
-    error: lastError ?? streamError ?? null
-  }), [isStreaming, lastError, streamError]);
+    error: lastError ?? streamError ?? null,
+    connectionState
+  }), [isStreaming, lastError, streamError, connectionState]);
 
   return {
     messages,
