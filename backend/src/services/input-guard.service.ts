@@ -1,100 +1,151 @@
-import { INPUT_GUARD_HEURISTICS, INPUT_GUARD_PATTERNS } from "../constants/input-guard.constants";
+import {
+  INPUT_GUARD_HEURISTICS_CONFIG,
+  INPUT_GUARD_PATTERN_DEFINITIONS,
+  INPUT_GUARD_RISK_THRESHOLDS,
+  InputGuardPatternDefinition,
+  InputGuardSignalType
+} from "../constants/input-guard.constants";
 
-type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
+export type RiskLevel = "LOW" | "MEDIUM" | "HIGH";
+
+export interface InputGuardSignal {
+  id: string;
+  type: InputGuardSignalType;
+  description: string;
+  score: number;
+}
 
 export interface InputGuardResult {
+  totalScore: number;
   riskLevel: RiskLevel;
+  detectedSignals: InputGuardSignal[];
   detectedPatterns: string[];
-  reason: string;
+  explanation: string;
 }
+
+const NO_SIGNAL_EXPLANATION = "No suspicious signals detected";
 
 export class InputGuardService {
   analyze(message: string): InputGuardResult {
     if (!message?.trim()) {
-      return this.buildResult("LOW", [], "Empty or whitespace-only input");
+      return this.buildResult([], "Input vacío o sin contenido significativo");
     }
 
     const normalized = message.trim();
-    const patternHits = this.detectPatterns(normalized);
-    const heuristicHits = this.applyHeuristics(normalized);
+    const patternSignals = this.detectPatternSignals(normalized);
+    const heuristicSignals = this.detectHeuristicSignals(normalized, patternSignals.length);
+    const signals = [...patternSignals, ...heuristicSignals];
 
-    const allFindings = [...patternHits, ...heuristicHits];
-    const riskLevel = this.calculateRiskLevel(patternHits.length, heuristicHits.length);
-
-    return this.buildResult(riskLevel, allFindings, this.buildReason(patternHits, heuristicHits));
+    return this.buildResult(signals);
   }
 
-  private detectPatterns(message: string): string[] {
-    const matches: string[] = [];
+  private detectPatternSignals(message: string): InputGuardSignal[] {
+    const signals: InputGuardSignal[] = [];
 
-    Object.entries(INPUT_GUARD_PATTERNS).forEach(([category, patterns]) => {
-      patterns.forEach((regex) => {
-        if (regex.test(message)) {
-          matches.push(`${category}:${regex}`);
-        }
-      });
+    INPUT_GUARD_PATTERN_DEFINITIONS.forEach((definition) => {
+      if (this.matchesPattern(definition.regex, message)) {
+        signals.push(this.buildSignalFromPattern(definition));
+      }
     });
 
-    return matches;
+    return signals;
   }
 
-  private applyHeuristics(message: string): string[] {
-    const hits: string[] = [];
+  private detectHeuristicSignals(message: string, patternSignalCount: number): InputGuardSignal[] {
+    const signals: InputGuardSignal[] = [];
+    const normalized = message.toLowerCase();
 
-    if (message.length > INPUT_GUARD_HEURISTICS.MAX_SAFE_LENGTH) {
-      hits.push("HEURISTIC:EXCESSIVE_LENGTH");
+    const imperativeMatches = this.countImperatives(normalized);
+
+    if (imperativeMatches >= INPUT_GUARD_HEURISTICS_CONFIG.STRONG_IMPERATIVE.minMatches) {
+      signals.push(
+        this.buildHeuristicSignal(
+          INPUT_GUARD_HEURISTICS_CONFIG.STRONG_IMPERATIVE,
+          `Coincidencias: ${imperativeMatches}`
+        )
+      );
     }
 
-    const instructionCount = this.countImperatives(message);
-    if (instructionCount >= INPUT_GUARD_HEURISTICS.MULTI_INSTRUCTION_THRESHOLD) {
-      hits.push("HEURISTIC:MULTI_INSTRUCTION");
+    if (imperativeMatches >= INPUT_GUARD_HEURISTICS_CONFIG.MULTI_INSTRUCTION.threshold) {
+      signals.push(this.buildHeuristicSignal(INPUT_GUARD_HEURISTICS_CONFIG.MULTI_INSTRUCTION));
     }
 
-    return hits;
+    if (message.length > INPUT_GUARD_HEURISTICS_CONFIG.EXCESSIVE_LENGTH.maxLength) {
+      signals.push(
+        this.buildHeuristicSignal(
+          INPUT_GUARD_HEURISTICS_CONFIG.EXCESSIVE_LENGTH,
+          `Largo: ${message.length}`
+        )
+      );
+    }
+
+    if (patternSignalCount >= INPUT_GUARD_HEURISTICS_CONFIG.PATTERN_COMBO.minPatterns) {
+      signals.push(this.buildHeuristicSignal(INPUT_GUARD_HEURISTICS_CONFIG.PATTERN_COMBO));
+    }
+
+    return signals;
+  }
+
+  private matchesPattern(regex: RegExp, message: string): boolean {
+    regex.lastIndex = 0;
+    return regex.test(message);
+  }
+
+  private buildSignalFromPattern(definition: InputGuardPatternDefinition): InputGuardSignal {
+    return {
+      id: definition.id,
+      type: definition.type,
+      description: definition.description,
+      score: definition.score
+    };
+  }
+
+  private buildHeuristicSignal(
+    config: typeof INPUT_GUARD_HEURISTICS_CONFIG[keyof typeof INPUT_GUARD_HEURISTICS_CONFIG],
+    details?: string
+  ): InputGuardSignal {
+    const description = details ? `${config.description} (${details})` : config.description;
+    return {
+      id: config.id,
+      type: config.type,
+      description,
+      score: config.score
+    };
   }
 
   private countImperatives(message: string): number {
-    const imperativeRegex = /(por favor|haz|hazlo|hazlo ahora|realiza|ejecuta|ignora|olvida|responde|actúa|deja)/gi;
+    const keywords = INPUT_GUARD_HEURISTICS_CONFIG.STRONG_IMPERATIVE.keywords.join("|");
+    const imperativeRegex = new RegExp(`\\b(${keywords})\\b`, "gi");
     return (message.match(imperativeRegex) ?? []).length;
   }
 
-  private calculateRiskLevel(patternHits: number, heuristicHits: number): RiskLevel {
-    if (patternHits >= 2 || (patternHits >= 1 && heuristicHits >= 1)) {
+  private calculateRiskLevel(totalScore: number): RiskLevel {
+    if (totalScore >= INPUT_GUARD_RISK_THRESHOLDS.HIGH) {
       return "HIGH";
     }
 
-    if (patternHits === 1 || heuristicHits >= 2) {
-      return "MEDIUM";
-    }
-
-    if (heuristicHits === 1) {
+    if (totalScore >= INPUT_GUARD_RISK_THRESHOLDS.MEDIUM) {
       return "MEDIUM";
     }
 
     return "LOW";
   }
 
-  private buildReason(patternHits: string[], heuristicHits: string[]): string {
-    if (!patternHits.length && !heuristicHits.length) {
-      return "No suspicious patterns detected";
-    }
+  private buildResult(signals: InputGuardSignal[], explanationOverride?: string): InputGuardResult {
+    const totalScore = signals.reduce((sum, signal) => sum + signal.score, 0);
+    const riskLevel = this.calculateRiskLevel(totalScore);
+    const explanation = explanationOverride
+      ? explanationOverride
+      : signals.length
+          ? signals.map((signal) => `${signal.id}(+${signal.score})`).join("; ")
+          : NO_SIGNAL_EXPLANATION;
 
-    const segments: string[] = [];
-    if (patternHits.length) {
-      segments.push(`Pattern matches: ${patternHits.join(", ")}`);
-    }
-    if (heuristicHits.length) {
-      segments.push(`Heuristics: ${heuristicHits.join(", ")}`);
-    }
-
-    return segments.join(" | ");
-  }
-
-  private buildResult(riskLevel: RiskLevel, detectedPatterns: string[], reason: string): InputGuardResult {
     return {
+      totalScore,
       riskLevel,
-      detectedPatterns,
-      reason
+      detectedSignals: signals,
+      detectedPatterns: signals.map((signal) => `${signal.type}:${signal.id}`),
+      explanation
     };
   }
 }

@@ -5,7 +5,7 @@ export const POLICIES: PolicyDefinition[] = [
     name: "KNOWLEDGE_BOUNDARY",
     conditions: {
       minRiskLevel: "HIGH",
-      patternIncludes: ["PROMPT_INJECTION", "ROLE_HIJACKING", "EXTERNAL_SOURCES"]
+      patternIncludes: ["PROMPT_INJECTION", "ROLE_HIJACKING", "EXTERNAL_SOURCE"]
     },
     action: "SAFE_RESPONSE"
   },
@@ -20,7 +20,7 @@ export const POLICIES: PolicyDefinition[] = [
   {
     name: "INSTRUCTION_OVERRIDE",
     conditions: {
-      patternIncludes: ["SYSTEM_OVERRIDE", "HEURISTIC:MULTI_INSTRUCTION"]
+      patternIncludes: ["SYSTEM_OVERRIDE", "HEURISTIC_MULTI_INSTRUCTION"]
     },
     action: "SAFE_RESPONSE"
   }

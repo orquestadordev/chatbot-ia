@@ -4,9 +4,11 @@ import { PolicyEngine } from "../../src/policies/policy.engine";
 import { InputGuardResult } from "../../src/services/input-guard.service";
 
 const buildGuardResult = (overrides: Partial<InputGuardResult> = {}): InputGuardResult => ({
+  totalScore: 0,
   riskLevel: "LOW",
+  detectedSignals: [],
   detectedPatterns: [],
-  reason: "",
+  explanation: "",
   ...overrides
 });
 
@@ -28,7 +30,7 @@ describe("PolicyEngine", () => {
 
   it("aplica SAFE_RESPONSE para patrones de override aunque el riesgo sea medio", () => {
     const result = engine.evaluate(
-      buildGuardResult({ riskLevel: "MEDIUM", detectedPatterns: ["HEURISTIC:MULTI_INSTRUCTION"] })
+      buildGuardResult({ riskLevel: "MEDIUM", detectedPatterns: ["INSTRUCTION_OVERRIDE:HEURISTIC_MULTI_INSTRUCTION"] })
     );
     expect(result.decision.policyName).toBe("INSTRUCTION_OVERRIDE");
   });
