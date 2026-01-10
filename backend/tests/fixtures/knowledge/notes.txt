@@ -1,0 +1,10 @@
+Proyecto AndesGPT
+Fecha: 2025-01-04
+
+Resumen:
+AndesGPT es un asistente local que opera con modelos Ollama.
+
+Puntos clave:
+- Respuestas en español
+- Contexto acotado al conocimiento cargado
+- Sin conexión a la nube

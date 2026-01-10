@@ -70,6 +70,37 @@ curl -N -X POST http://localhost:4000/api/chat \
 
 > `-N` mantiene el stream abierto para recibir los tokens SSE.
 
+## Importar conocimiento en runtime
+
+El plano dinámico permite inyectar conocimiento efímero para la sesión actual sin editar `knowledge.md` ni reiniciar el backend.
+
+- **Endpoint:** `POST /api/knowledge/import`
+- **Content-Type:** `multipart/form-data`
+- **Campo esperado:** `files` (puede repetirse para enviar varios archivos)
+- **Formatos soportados:** `.txt`, `.md`
+
+Ejemplo utilizando `curl`:
+
+```bash
+curl -X POST http://localhost:4000/api/knowledge/import \
+  -H "Accept: application/json" \
+  -F "files=@tests/fixtures/knowledge/notes.txt" \
+  -F "files=@tests/fixtures/knowledge/history.md"
+```
+
+Respuesta típica:
+
+```json
+{
+  "importedFiles": 2,
+  "totalChunks": 14,
+  "sources": ["history.md", "notes.txt"],
+  "errors": []
+}
+```
+
+Los archivos se normalizan, se dividen en chunks por secciones/párrafos y se almacenan en memoria. Estos chunks complementan el conocimiento base durante la sesión actual; al reiniciar el backend se limpian automáticamente. Puedes invocar `POST /api/knowledge/import` nuevamente para reemplazar el contenido de una fuente o combinar varias.
+
 ## Prerrequisitos
 
 Antes de levantar el backend asegurate de contar con:

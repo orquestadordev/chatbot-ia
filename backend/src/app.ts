@@ -3,6 +3,7 @@ import express, { Application, Request, Response } from "express";
 import cors, { CorsOptions } from "cors";
 // Express fue elegido sobre Fastify para aprovechar su API simple para SSE sin plugins adicionales.
 import chatRouter from "./routes/chat.routes";
+import knowledgeRouter from "./routes/knowledge.routes";
 import { corsConfig } from "./config/cors.config";
 
 const app: Application = express();
@@ -36,5 +37,6 @@ app.get("/health", (_req: Request, res: Response) => {
 });
 
 app.use("/api", chatRouter);
+app.use("/api", knowledgeRouter);
 
 export default app;
