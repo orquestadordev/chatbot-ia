@@ -36,6 +36,12 @@ npm test
 - 🧠 Nuevo: base de conocimiento estática `backend/knowledge/knowledge.md` con chunking interno para controlar las respuestas.
 - ✅ Tests de regresión (Jest + Supertest) que verifican que el backend no responda fuera del conocimiento autorizado.
 
+## Auto-refresco del conocimiento
+
+- En modo desarrollo el backend observa `backend/knowledge/knowledge.md` y vuelve a cargar los chunks en memoria automáticamente cuando guardás cambios.
+- Podés desactivar esta característica con `KNOWLEDGE_WATCH_ENABLED=false` o ajustar el debouncer (ms) con `KNOWLEDGE_WATCH_DEBOUNCE_MS`.
+- El watcher se desactiva solo en `NODE_ENV=production` y durante los tests para evitar efectos secundarios.
+
 ## Requisitos previos
 
 - Node.js 18+

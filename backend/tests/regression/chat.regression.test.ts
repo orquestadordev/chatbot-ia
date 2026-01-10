@@ -1,7 +1,7 @@
 // @ts-nocheck
 
 import request from "supertest";
-import { ANSWERABLE_CASES, FALLBACK_CASES } from "./questions";
+import { ANSWERABLE_CASES, FALLBACK_CASES, IDENTITY_CASES } from "./questions";
 import { extractSSEPayload, concatenatePayload } from "../utils/sse.helper";
 import { KNOWLEDGE_FALLBACK_RESPONSE } from "../../src/constants/prompt.constants";
 
@@ -10,8 +10,18 @@ jest.mock("../../src/clients/ollama.client", () => {
     async *streamCompletion(payload: { prompt: string; system?: string }) {
       const question = payload.prompt.toLowerCase();
 
-      if (question.includes("cómo se llama")) {
-        yield "El asistente se llama AndesGPT y opera localmente.";
+      if (question.includes("cómo se llama") || question.includes("cómo te llamas")) {
+        yield "Hola, soy AndesGPT y estoy acá para ayudarte.";
+        return;
+      }
+
+      if (question.includes("quién sos")) {
+        yield "Soy AndesGPT, un asistente local basado en Ollama.";
+        return;
+      }
+
+      if (question.includes("pregunta del usuario: hola")) {
+        yield "Hola, soy AndesGPT. ¿En qué te ayudo?";
         return;
       }
 
@@ -49,6 +59,12 @@ const expectResponseExcludes = (payload: string, terms: string[] = []) => {
   }
 };
 
+const expectResponseMatches = (payload: string, patterns: RegExp[] = []) => {
+  for (const pattern of patterns) {
+    expect(payload).toMatch(pattern);
+  }
+};
+
 describe("/api/chat knowledge regression", () => {
   describe("knowledge-backed questions", () => {
     ANSWERABLE_CASES.forEach((testCase) => {
@@ -59,6 +75,21 @@ describe("/api/chat knowledge regression", () => {
         const payload = concatenatePayload(extractSSEPayload(response.text));
         expectResponseContains(payload, testCase.mustInclude);
         expectResponseExcludes(payload, testCase.mustExclude);
+        expectResponseMatches(payload, testCase.mustMatch);
+      });
+    });
+  });
+
+  describe("identity and conversational tone", () => {
+    IDENTITY_CASES.forEach((testCase) => {
+      it(`mantiene identidad en ${testCase.name}`, async () => {
+        const response = await agent.post("/api/chat").send({ message: testCase.question });
+
+        expect(response.status).toBe(200);
+        const payload = concatenatePayload(extractSSEPayload(response.text));
+        expectResponseContains(payload, testCase.mustInclude);
+        expectResponseExcludes(payload, testCase.mustExclude);
+        expectResponseMatches(payload, testCase.mustMatch);
       });
     });
   });
@@ -73,6 +104,7 @@ describe("/api/chat knowledge regression", () => {
         expect(payload).toEqual(expect.stringContaining(KNOWLEDGE_FALLBACK_RESPONSE));
         expectResponseContains(payload, testCase.mustInclude);
         expectResponseExcludes(payload, testCase.mustExclude);
+        expectResponseMatches(payload, testCase.mustMatch);
       });
     });
   });
